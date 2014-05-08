@@ -19,16 +19,17 @@ const int PIN_RUN = 8;
 const int PIN_STEP = 9;
 const int PIN_ENABLE = A0; 
 const int PIN_TIME_SCALE_POT = A1;
+const float Pi = 3.14159;
 
-const int STEP_RES = 1;  // Stepper resolution
-const int STEPS_PR_ROUND = 200*STEP_RES; // Total steps pr. round
-const float RADIUS = 0.003; // [m]
-const float DIST_PR_STEP = (2*RADIUS*PI)/STEPS_PR_ROUND; // Omkreds/steps pr round
+const float STEP_RES = 16.0;  // Stepper resolution
+const float STEPS_PR_ROUND = 200.0*STEP_RES; // Total steps pr. round
+const float RADIUS = 0.0272; // [m]
+const float DIST_PR_STEP = (2.0*RADIUS*Pi)/STEPS_PR_ROUND; //[cm] Omkreds/steps pr round
 
 
 float distance = 0.0;  // [m] Record the number of steps we've taken
-float distance_to_go = 1; // [m]
-int steps_to_go = distance_to_go/DIST_PR_STEP; // total amount of steps to the distance_to_go
+float distance_to_go = 1.0; // [m]
+long steps_to_go = (distance_to_go)/DIST_PR_STEP; // total amount of steps to the distance_to_go
 float time_to_go = 60; // [s] time to do the distance  
 int steps = 0;  // Total count of steps
 int run = 0;   // Control var for start/stop fcn
@@ -50,6 +51,7 @@ void setup() {
      ; // wait for serial to begin 
     }
     Serial.println('Timelapse Dolly Start');
+
     
   pinMode(PIN_RUN, INPUT_PULLUP);     
   pinMode(PIN_STEP, OUTPUT);
@@ -77,11 +79,13 @@ void loop() {
       // Print Parameters
       Serial.print("Dist: ");
       Serial.print(distance_to_go);
+      Serial.print(", Steps to go:");
+      Serial.print(steps_to_go);
       Serial.print(", Time: ");
       Serial.print(time_to_go);
       Serial.print(", Step Time: ");
       Serial.println(time_pr_step_ms);
-      
+     
       // Change state
       // Start running
       if(run == LOW){
@@ -97,7 +101,7 @@ void loop() {
     else if (state == "MOVE"){
       // MOVE
       // Check to see if we are at the end of our move
-      time_pr_step = 100/16;
+      time_pr_step = 1;
       if ((steps*DIST_PR_STEP < distance_to_go) && (run == LOW)) {
         current_time = millis();
         if(current_time-prev_time >= time_pr_step/2){
@@ -110,7 +114,7 @@ void loop() {
             digitalWrite(PIN_STEP, LOW); // step low
             stepState = 0;
             steps = 1+steps; // Incremetent steps 
-            Serial.println(steps);
+            Serial.println(steps_to_go-steps);
           }
           prev_time = current_time;
         }    

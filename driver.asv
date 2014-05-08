@@ -11,8 +11,8 @@ steps_to_go = distance_to_go/DIST_PR_STEP
 steps = 0;
 
 %% Omvendt beregning
-steps_to_go = 20051
-distance_to_go = 1.07
+steps_to_go = 25464
+distance_to_go = 1.27
 DIST_PR_STEP = distance_to_go/steps_to_go
 RADIUS = (1/2)*(DIST_PR_STEP*STEPS_PR_ROUND)/pi
 
