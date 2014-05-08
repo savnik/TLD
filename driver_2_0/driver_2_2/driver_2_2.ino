@@ -27,11 +27,11 @@ const float RADIUS = 0.0272; // [m]
 const float DIST_PR_STEP = (2.0*RADIUS*Pi)/STEPS_PR_ROUND; //[cm] Omkreds/steps pr round
 
 
-float distance = 0.0;  // [m] Record the number of steps we've taken
-float distance_to_go = 1.0; // [m]
-long steps_to_go = (distance_to_go)/DIST_PR_STEP; // total amount of steps to the distance_to_go
+float distance = 0.0;  // [m] Record the number dist we've taken
+float distance_to_go = 2.0; // [m] MAX:4.295*10^9 MIN:5.3407*10^-5
+unsigned long steps_to_go = (distance_to_go)/DIST_PR_STEP; // total amount of steps to the distance_to_go
 float time_to_go = 60; // [s] time to do the distance  
-int steps = 0;  // Total count of steps
+unsigned long steps = 0;  // Total count of steps
 int run = 0;   // Control var for start/stop fcn
 int dir = 1;   // Control direction
 int sensorValue = 0; // Time scale pot sensor
@@ -41,15 +41,19 @@ String state = "IDLE", next_state = "IDLE";  // Statemachine control
 
 float time_pr_step;
 float time_pr_step_ms;
+float time_pr_step_micros;
+long time_start = 0;
+long time_end = 0;
+int use_micros_time = 0;
 
 unsigned long current_time = 0;
 unsigned long prev_time = 0;
 
 void setup() {
-    Serial.begin(9600);  
-    while(!Serial){
+    Serial.begin(115200);  
+    /*while(!Serial){
      ; // wait for serial to begin 
-    }
+    }*/
     Serial.println('Timelapse Dolly Start');
 
     
@@ -72,25 +76,29 @@ void loop() {
       // Wait for action
       
       // Calc delay time
-      float time_pr_step = time_to_go/steps_to_go; // the delay time between steps
-      float time_pr_step_ms = time_pr_step*pow(10,3); // Convert to millisec
-      if (time_pr_step_ms < 1) time_pr_step_ms = 1;  // Don't go too fast!
+      time_pr_step = time_to_go/steps_to_go; // the delay time between steps [s]/[step]
+      time_pr_step_ms = time_pr_step*pow(10,3); // Convert to millisec [ms]/[step]
+      time_pr_step_micros = time_pr_step*pow(10,6); // Convert to millisec [micros]/[step]
+      if (time_pr_step_ms < 1) time_pr_step_ms = 1;  // Don't go too fast! saturation
+      if (time_pr_step_micros < 1) time_pr_step_micros = 1;  // Don't go too fast! saturation
+      
+      if(time_to_go < 60*60) use_micros_time = 1; // 60[m]*60[s] use micros instead of millis
       
       // Print Parameters
-      Serial.print("Dist: ");
+      /*Serial.print("Dist: ");
       Serial.print(distance_to_go);
       Serial.print(", Steps to go:");
       Serial.print(steps_to_go);
       Serial.print(", Time: ");
       Serial.print(time_to_go);
       Serial.print(", Step Time: ");
-      Serial.println(time_pr_step_ms);
+      Serial.println(time_pr_step_ms);*/
      
       // Change state
       // Start running
       if(run == LOW){
-        Serial.println("Next state: MOVE!");
         digitalWrite(PIN_ENABLE, LOW);
+        time_start = millis();
         next_state = "MOVE";
       }
       else{
@@ -99,38 +107,79 @@ void loop() {
     
     }
     else if (state == "MOVE"){
+      next_state = "MOVE";
       // MOVE
       // Check to see if we are at the end of our move
-      time_pr_step = 1;
       if ((steps*DIST_PR_STEP < distance_to_go) && (run == LOW)) {
-        current_time = millis();
-        if(current_time-prev_time >= time_pr_step/2){
-          // Step toogle
-          if(stepState == 0){
-            digitalWrite(PIN_STEP, HIGH); // step high
-            stepState = 1;
-          }
-          else if(stepState == 1){
-            digitalWrite(PIN_STEP, LOW); // step low
-            stepState = 0;
-            steps = 1+steps; // Incremetent steps 
-            Serial.println(steps_to_go-steps);
-          }
-          prev_time = current_time;
-        }    
+        
+        
+        if(use_micros_time == 1){ 
+          current_time = micros();    
+          if(current_time-prev_time >= time_pr_step_micros/2){
+            prev_time = current_time;
+            // Step toogle
+            if(stepState == 0){
+              digitalWrite(PIN_STEP, HIGH); // step high
+              stepState = 1;
+            }
+            else if(stepState == 1){
+              digitalWrite(PIN_STEP, LOW); // step low
+              stepState = 0;
+              steps = 1+steps; // Incremetent steps 
+              //Serial.println(steps_to_go-steps);
+            } // end step state
+            
+          } // if time
+            
+        } // if use micro
+        else{  
+          current_time = millis();
+          if(current_time-prev_time >= time_pr_step_ms/2){
+            prev_time = current_time;
+            // Step toogle
+            if(stepState == 0){
+              digitalWrite(PIN_STEP, HIGH); // step high
+              stepState = 1;
+            }
+            else if(stepState == 1){
+              digitalWrite(PIN_STEP, LOW); // step low
+              stepState = 0;
+              steps = 1+steps; // Incremetent steps 
+              //Serial.println(steps_to_go-steps);
+            } // end step state
+            
+          } // if time
+        }// else use micros   
      
-      }
+      } // if dist <
        
+      // If dist is done go to wait state 
+      if (steps*DIST_PR_STEP >= distance_to_go){
+         next_state = "DONE";
+         digitalWrite(PIN_ENABLE, HIGH); // disable motor
+         // calc run time
+         time_end = millis();
+         Serial.print("Time: ");
+         Serial.println((time_end-time_start)*pow(10,-3)); //[s]
+         steps = 0; // reset dist
+         
+      } // if dist >=
+      
+      
       // Change state
-      if(run == HIGH){  // Stop running
+      if(run == HIGH){  // Stop running      
         next_state = "IDLE";
-        digitalWrite(PIN_ENABLE, HIGH);
-      }
-      else{
-        next_state = "MOVE"; // Stay in state 
+        digitalWrite(PIN_ENABLE, HIGH); // disable motor
       }
 
-    }    
+    } // state  
+   
+    else if(state == "DONE"){
+      next_state = "DONE";
+      // If off go to idle
+      if(run == HIGH) next_state = "IDLE";
+     
+    } // state DONE 
     else {
        Serial.print("Error in statemachine: ");
        Serial.println(state); 
@@ -189,6 +238,7 @@ void establishContact() {
 
 /*
 || @changelog
+|| | 2.2 2014-05-08 - Peter Savnik : Time function fix
 || | 2.1 2014-05-08 - Peter Savnik : Dist is calibrated 
 || | 2.0 2014-05-06 - Peter Savnik : Added state machine & Millis as delay
 || | 1.3 2014-05-05 - Peter Savnik : Added Potentiometer control of time
