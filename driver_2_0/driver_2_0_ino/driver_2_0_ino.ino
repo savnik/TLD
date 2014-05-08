@@ -1,7 +1,7 @@
 /*
 
 Timelapse Dolly - Automation, Systemer og Komponenter
-@version 1.3
+@version 2.0
 @date 2014-05-05
 @author Peter Savnik
 
@@ -185,7 +185,7 @@ void establishContact() {
 
 /*
 || @changelog
-|| | 2.0 2014-05-06 - Peter Savnik : Added state machine
+|| | 2.0 2014-05-06 - Peter Savnik : Added state machine & Millis as delay
 || | 1.3 2014-05-05 - Peter Savnik : Added Potentiometer control of time
 || | 1.2 2014-05-01 - Peter Savnik : Added Debug function, enable serial output when debugging
 || | 1.1 2014-05-01 - Peter Savnik : Added direction control
