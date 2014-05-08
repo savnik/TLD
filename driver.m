@@ -22,3 +22,7 @@ steps_to_go = distance_to_go/DIST_PR_STEP
 time_pr_step = time_to_go/steps_to_go
 time_pr_step_ms = time_pr_step*10^3
 
+%%
+m = 10
+s = m*60
+ms = s*10^3
