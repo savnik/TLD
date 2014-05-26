@@ -72,7 +72,7 @@ void setup() {
 
 void loop() {
 
-  run = digitalRead(PIN_RUN);
+  run = digitalRead(PIN_RUN); // Start/Stop knap
   
   // Statemachine!  
     if (state == "IDLE"){
@@ -111,7 +111,7 @@ void loop() {
       // Change state
       // Start running
       if(run == LOW){
-        digitalWrite(PIN_ENABLE, LOW);
+        enableMotor();
         time_start = millis();
         next_state = "MOVE";
       }
@@ -170,7 +170,7 @@ void loop() {
       // If dist is done go to wait state 
       if (steps*DIST_PR_STEP >= distance_to_go){
          next_state = "DONE";
-         digitalWrite(PIN_ENABLE, HIGH); // disable motor
+         disableMotor(); // disable motor
          // calc run time
          time_end = millis();
          Serial.print("Time: ");
@@ -183,7 +183,7 @@ void loop() {
       // Change state
       if(run == HIGH){  // Stop running      
         next_state = "IDLE";
-        digitalWrite(PIN_ENABLE, HIGH); // disable motor
+        disableMotor(); // disable motor
       }
 
     } // state  
