@@ -19,6 +19,7 @@ const int PIN_RUN = 8;
 const int PIN_STEP = 9;
 const int PIN_ENABLE = A0; 
 const int PIN_TIME_SCALE_POT = A1;
+const int PIN_DIST_SCALE_POT = A2;
 const float Pi = 3.14159;
 
 const float STEP_RES = 16.0;  // Stepper resolution
@@ -28,9 +29,11 @@ const float DIST_PR_STEP = (2.0*RADIUS*Pi)/STEPS_PR_ROUND; //[cm] Omkreds/steps 
 
 
 float distance = 0.0;  // [m] Record the number dist we've taken
-float distance_to_go = 20.0; // [m] MAX:4.295*10^9 MIN:5.3407*10^-5
+float distance_to_go = 5.0; // [m] MAX:4.295*10^9 MIN:5.3407*10^-5
+float DISTANCE_TO_GO_MAX = 20.0; // [m]
 unsigned long steps_to_go = (distance_to_go)/DIST_PR_STEP; // total amount of steps to the distance_to_go
-float time_to_go = 60*60; // [s] time to do the distance  
+float time_to_go = 60.0*60.0; // [s] time to do the distance
+float TIME_TO_GO_MAX = 60.0*60.0; // [s] max time to go on pottentiometer
 unsigned long steps = 0;  // Total count of steps
 int run = 0;   // Control var for start/stop fcn
 int dir = 1;   // Control direction
@@ -74,6 +77,17 @@ void loop() {
   // Statemachine!  
     if (state == "IDLE"){
       // Wait for action
+      
+      // Read time potentiometer
+      int timePotValue = analogRead(PIN_TIME_SCALE_POT);
+      // Calc time to go
+      float time_to_go = timePotValue * (TIME_TO_GO_MAX / 1023.0);
+      
+      // Read time potentiometer
+      int distPotValue = analogRead(PIN_DIST_SCALE_POT);
+      // Calc time to go
+      float distance_to_go = distPotValue * (DISTANCE_TO_GO_MAX / 1023.0);
+      Serial.println(distance_to_go);
       
       // Calc delay time
       time_pr_step = time_to_go/steps_to_go; // the delay time between steps [s]/[step]
@@ -238,6 +252,7 @@ void establishContact() {
 
 /*
 || @changelog
+|| | 2.4 2014-05-26 - Peter Savnik : Fix potentiometer control of time
 || | 2.2 2014-05-08 - Peter Savnik : Time function fix
 || | 2.1 2014-05-08 - Peter Savnik : Dist is calibrated 
 || | 2.0 2014-05-06 - Peter Savnik : Added state machine & Millis as delay
