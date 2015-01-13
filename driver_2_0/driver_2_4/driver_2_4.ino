@@ -12,7 +12,6 @@ Input: Distance and Time
 
 */
 #include <math.h>
-#include <Keypad.h>
 
 const int DEBUG = 0;  // Toogle Serial output
 const int PIN_RUN = 8;
@@ -93,9 +92,10 @@ void loop() {
       time_pr_step = time_to_go/steps_to_go; // the delay time between steps [s]/[step]
       time_pr_step_ms = time_pr_step*pow(10,3); // Convert to millisec [ms]/[step]
       time_pr_step_micros = time_pr_step*pow(10,6); // Convert to millisec [micros]/[step]
-      if (time_pr_step_ms < 1) time_pr_step_ms = 1;  // Don't go too fast! saturation
-      if (time_pr_step_micros < 1) time_pr_step_micros = 1;  // Don't go too fast! saturation
+      if (time_pr_step_ms < 1) time_pr_step_ms = 2;  // Don't go too fast! saturation
+      if (time_pr_step_micros < 1) time_pr_step_micros = 2;  // Don't go too fast! saturation
       
+      use_micros_time = 0;
       if(time_to_go < 60*60) use_micros_time = 1; // 60[m]*60[s] use micros instead of millis
       
       // Print Parameters
